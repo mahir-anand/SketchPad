@@ -1,0 +1,21 @@
+body {
+    background-color: #ededed;
+}
+
+#pad {
+    background-color: white;
+    box-shadow: 1px 1px 5px grey ;
+    height: 500px;
+    width: 500px;
+    margin: auto;
+    margin-top: 12%;
+    display: grid;
+}
+
+/* 
+#grid {
+    height: 31.25px;
+    width: 31.25px;
+    background-color: red;
+    border: solid;
+} */
