@@ -1,5 +1,84 @@
 body {
     background-color: #ededed;
+    font-family: 'Roboto', sans-serif;
+}
+
+h1 {
+    font-family: 'Roboto', sans-serif;
+    font-size: 70px;
+    color: #333333;
+    text-align: center;
+    margin-left: 85px;
+}
+
+main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-left: -220px;
+    gap: 100px;
+}
+
+
+#controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+#colorPicker {
+    transition: 0.3s;
+    width: 80px;
+    height: 80px; 
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 1px 1px 5px 0.005px grey;
+}
+
+#colorPicker:hover {
+    transform: scale(1.05);
+}
+
+  input[type=color]::-webkit-color-swatch {
+    border-radius: 50%;
+  }
+  
+  input[type=color]::-webkit-color-swatch-wrapper {
+      border: none;
+      border-radius: 50%;
+      padding: 0;
+  }
+
+#controls button {
+    background-color: #ededed;
+    border: 1px solid black;
+    height: 45px;
+    width: 200px;
+    font-size: 15px;
+    border-radius: 7px;
+    transition: 0.3s;
+    box-shadow: 5px 5px 1px grey;
+}
+
+#textValue {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: -40px;
+    
+}
+
+#inputValue {
+    accent-color: black;
+    margin-top: 20px;
+    width: 200px;
+    height: 45px;  
+    transition: 0.3s;
+}
+
+#inputValue:hover {
+    transform: scale(1.05);
 }
 
 #pad {
@@ -7,15 +86,9 @@ body {
     box-shadow: 1px 1px 5px grey ;
     height: 500px;
     width: 500px;
-    margin: auto;
-    margin-top: 12%;
     display: grid;
 }
 
-/* 
-#grid {
-    height: 31.25px;
-    width: 31.25px;
-    background-color: red;
-    border: solid;
-} */
+button:hover {
+    transform: scale(1.05);
+}
