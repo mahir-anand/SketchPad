@@ -31,19 +31,25 @@ const styleActive = function () {
     document.activeElement.style.color = 'white';
 }
 
+// TRACKING MOUSE DOWN OR UP
 let mouseDown = false
 document.body.onmousedown = () => (mouseDown = true)
 document.body.onmouseup = () => (mouseDown = false)
 
-updateSize();
-color.focus();
-styleActive();
-let currentMode = document.activeElement.id;
-let currentColor = colorPicker.value;
+// LET'S START
+updateSize(); // initializes the sketch pad (16 X 16)
+color.focus(); // activates color mode
+styleActive(); // styles the color button
+let currentMode = document.activeElement.id; // current mode -> color
+let currentColor = colorPicker.value; // current color -> #333333 (default value from HTML)
 
-// UPDATE COLOR WHEN CHANGED
+// UPDATE COLOR EVENT LISTENER
 colorPicker.addEventListener('input', () => {
     currentColor = colorPicker.value;
+    color.focus();
+    document.activeElement.id = 'color';
+    currentMode = document.activeElement.id;
+    styleActive();
 })
 
 // UPDATE GRID SIZE WITH INPUT CHANGE
@@ -73,56 +79,38 @@ eraser.addEventListener('click', () => {
 
 // EVENT LISTENER ON THE SKETCH PAD
 pad.addEventListener('mouseover', () => {
-    if (currentMode == 'color') {
-        colorMode();
-    } else if (currentMode == 'eraser') {
-        eraserMode();
-    } else if (currentMode == 'random') {
-        randomMode();
-    } 
+    draw();
 })
-
-// COLOR MODE
-function colorMode() {
-    pad.addEventListener('mouseover', function() {
-        let grid = event.target;
-        if (mouseDown) {
-            grid.style.backgroundColor = currentColor;
-            }
-        })
-    }
-// ERASER MODE
-function eraserMode() {
-    pad.addEventListener('mouseover', function() {
-        let grid = event.target;
-        if (mouseDown) {
-            grid.style.backgroundColor = 'white';
-            }
-        })
-    }
-
-// RANDOM MODE
-function randomMode() {
-    pad.addEventListener('mouseover', function() {
-        let grid = event.target;
-        if (mouseDown) {
-            grid.style.backgroundColor = randomColor();
-            }
-        })
-    }
-
-    const randomColor = function () {
-        let x = Math.floor(Math.random() * 255) + 1
-        let y = Math.floor(Math.random() * 255) + 1
-        let z = Math.floor(Math.random() * 255) + 1
-        return `rgb(${x},${y},${z})`
-        }
-    
 
 // EVENT LISTENER ON THE CLEAR BUTTON
 clear.addEventListener('click', () => {
     pad.innerHTML = '';
     updateSize();
 })
+
+// MAIN DRAW FUNCTION -> THREE MODES (color, random, eraser)
+function draw() {
+    pad.addEventListener('mouseover', function() {
+        let grid = event.target;
+        if (mouseDown) {
+            if (currentMode == 'color') {
+                grid.style.backgroundColor = currentColor;
+            } else if (currentMode == 'random') {
+                grid.style.backgroundColor = randomColor();
+            } else if (currentMode == 'eraser') {
+                grid.style.backgroundColor = 'white';
+            }
+        }
+    })
+}
+
+const randomColor = function () {
+    let x = Math.floor(Math.random() * 255) + 1
+    let y = Math.floor(Math.random() * 255) + 1
+    let z = Math.floor(Math.random() * 255) + 1
+    return `rgb(${x},${y},${z})`
+    }
+    
+
 
 
