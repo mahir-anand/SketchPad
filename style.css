@@ -60,6 +60,13 @@ main {
     border-radius: 7px;
     transition: 0.3s;
     box-shadow: 5px 5px 1px grey;
+    outline: none;
+}
+
+#controls button:hover {
+    transform: scale(1.05);
+    box-shadow: 5px 5px 1px grey;
+    /* background-color: black; */
 }
 
 #textValue {
@@ -89,6 +96,5 @@ main {
     display: grid;
 }
 
-button:hover {
-    transform: scale(1.05);
-}
+
+
