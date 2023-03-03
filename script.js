@@ -13,7 +13,7 @@ const updateSize = function () {
     pad.style.gridTemplateColumns = `repeat(${value}, 1fr)`;
     pad.style.gridTemplateRows = `repeat(${value}, 1fr)`;
     let numOfGrids = value * value;
-    for (let i = 0 ; i <numOfGrids ; i++) {
+    for (let i = 0 ; i < numOfGrids ; i++) {
         let grid = document.createElement('div');
         pad.insertAdjacentElement('beforeend',grid);
         }
@@ -33,10 +33,10 @@ const styleActive = function () {
 
 // TRACKING MOUSE DOWN OR UP
 let mouseDown = false
-document.body.onmousedown = () => (mouseDown = true)
-document.body.onmouseup = () => (mouseDown = false)
+document.body.onmousedown = () => (mouseDown = true) 
+document.body.onmouseup = () => (mouseDown = false) 
 
-// LET'S START
+// LET'S BEGIN
 updateSize(); // initializes the sketch pad (16 X 16)
 color.focus(); // activates color mode
 styleActive(); // styles the color button
@@ -78,9 +78,9 @@ eraser.addEventListener('click', () => {
 })
 
 // EVENT LISTENER ON THE SKETCH PAD
-pad.addEventListener('mouseover', () => {
-    draw();
-})
+pad.addEventListener('mouseover', draw);
+pad.addEventListener('mousedown', draw);
+pad.addEventListener('click', draw);
 
 // EVENT LISTENER ON THE CLEAR BUTTON
 clear.addEventListener('click', () => {
@@ -89,19 +89,30 @@ clear.addEventListener('click', () => {
 })
 
 // MAIN DRAW FUNCTION -> THREE MODES (color, random, eraser)
-function draw() {
-    pad.addEventListener('mouseover', function() {
-        let grid = event.target;
-        if (mouseDown) {
-            if (currentMode == 'color') {
-                grid.style.backgroundColor = currentColor;
-            } else if (currentMode == 'random') {
-                grid.style.backgroundColor = randomColor();
-            } else if (currentMode == 'eraser') {
-                grid.style.backgroundColor = 'white';
-            }
+function draw(e) {
+    let grid = e.target;
+    if (e.type === 'click') {
+        if (currentMode == 'color') {
+            grid.style.backgroundColor = currentColor;
+        } else if (currentMode == 'random') {
+            grid.style.backgroundColor = randomColor();
+        } else if (currentMode == 'eraser') {
+            grid.style.backgroundColor = 'white';
         }
-    })
+        if (e.target.id == 'pad') {
+            e.target.style.backgroundColor = 'white';
+            }
+    }
+    if (mouseDown) {
+        if (currentMode == 'color') {
+            grid.style.backgroundColor = currentColor;
+        } else if (currentMode == 'random') {
+            grid.style.backgroundColor = randomColor();
+        } else if (currentMode == 'eraser') {
+            grid.style.backgroundColor = 'white';
+        }
+    
+    }
 }
 
 const randomColor = function () {
