@@ -9,10 +9,16 @@ const redoBtn = document.querySelector('#redo');
 const eraser = document.querySelector('#eraser');
 const clear = document.querySelector('#clear');
 const downloadBtn = document.querySelector('#download');
+const bgImageInput = document.querySelector('#bgImageInput');
+const setBgImageBtn = document.querySelector('#setBgImage');
+const removeBgImageBtn = document.querySelector('#removeBgImage');
 
 // Undo / Redo state
 let undoStack = [];
 let redoStack = [];
+
+// Background image (data URL) or null
+let padBackgroundImageUrl = null;
 
 function saveState() {
     const cells = pad.children;
@@ -38,10 +44,12 @@ const updateSize = function () {
     pad.style.gridTemplateColumns = `repeat(${value}, 1fr)`;
     pad.style.gridTemplateRows = `repeat(${value}, 1fr)`;
     let numOfGrids = value * value;
+    const defaultBg = padBackgroundImageUrl ? 'transparent' : 'white';
     for (let i = 0 ; i < numOfGrids ; i++) {
         let grid = document.createElement('div');
-        pad.insertAdjacentElement('beforeend',grid);
-        }
+        grid.style.backgroundColor = defaultBg;
+        pad.insertAdjacentElement('beforeend', grid);
+    }
 }
 
 //  STYLE THE ACTIVE MODE
@@ -120,6 +128,45 @@ clear.addEventListener('click', () => {
     updateUndoRedoButtons();
 })
 
+// Background image: open file picker
+setBgImageBtn.addEventListener('click', () => bgImageInput.click());
+
+bgImageInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        const dataUrl = reader.result;
+        padBackgroundImageUrl = dataUrl;
+        pad.style.backgroundImage = `url(${dataUrl})`;
+        pad.style.backgroundSize = 'cover';
+        pad.style.backgroundPosition = 'center';
+        pad.style.backgroundRepeat = 'no-repeat';
+        removeBgImageBtn.style.display = '';
+        // Make existing white cells transparent so image shows through
+        Array.from(pad.children).forEach(cell => {
+            const bg = getComputedStyle(cell).backgroundColor;
+            if (bg === 'rgb(255, 255, 255)' || bg === 'white') cell.style.backgroundColor = 'transparent';
+        });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+});
+
+removeBgImageBtn.addEventListener('click', () => {
+    padBackgroundImageUrl = null;
+    pad.style.backgroundImage = '';
+    pad.style.backgroundSize = '';
+    pad.style.backgroundPosition = '';
+    pad.style.backgroundRepeat = '';
+    pad.style.backgroundColor = 'white';
+    removeBgImageBtn.style.display = 'none';
+    Array.from(pad.children).forEach(cell => {
+        const bg = getComputedStyle(cell).backgroundColor;
+        if (bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') cell.style.backgroundColor = 'white';
+    });
+});
+
 // UNDO / REDO
 undoBtn.addEventListener('click', () => {
     if (undoStack.length === 0) return;
@@ -149,11 +196,11 @@ function draw(e) {
         } else if (currentMode == 'random') {
             grid.style.backgroundColor = randomColor();
         } else if (currentMode == 'eraser') {
-            grid.style.backgroundColor = 'white';
+            grid.style.backgroundColor = padBackgroundImageUrl ? 'transparent' : 'white';
         }
         if (e.target.id == 'pad') {
-            e.target.style.backgroundColor = 'white';
-            }
+            e.target.style.backgroundColor = padBackgroundImageUrl ? '' : 'white';
+        }
     }
     if (mouseDown) {
         if (currentMode == 'color') {
@@ -161,7 +208,7 @@ function draw(e) {
         } else if (currentMode == 'random') {
             grid.style.backgroundColor = randomColor();
         } else if (currentMode == 'eraser') {
-            grid.style.backgroundColor = 'white';
+            grid.style.backgroundColor = padBackgroundImageUrl ? 'transparent' : 'white';
         }
     
     }
@@ -175,20 +222,12 @@ const randomColor = function () {
 }
 
 // DOWNLOAD SKETCH AS PNG
-downloadBtn.addEventListener('click', () => {
+function doDownload(ctx, canvas, link) {
     const gridSize = Number(inputValue.value);
     const side = 500;
     const cellSize = side / gridSize;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = side;
-    canvas.height = side;
-    const ctx = canvas.getContext('2d');
-
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, side, side);
-
     const cells = pad.children;
+
     for (let i = 0; i < cells.length; i++) {
         const cell = cells[i];
         const bg = getComputedStyle(cell).backgroundColor;
@@ -204,9 +243,37 @@ downloadBtn.addEventListener('click', () => {
         }
     }
 
-    const link = document.createElement('a');
     link.download = `sketchpad-${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
+}
+
+downloadBtn.addEventListener('click', () => {
+    const side = 500;
+    const canvas = document.createElement('canvas');
+    canvas.width = side;
+    canvas.height = side;
+    const ctx = canvas.getContext('2d');
+    const link = document.createElement('a');
+
+    if (padBackgroundImageUrl) {
+        const img = new Image();
+        img.onload = () => {
+            const iw = img.naturalWidth;
+            const ih = img.naturalHeight;
+            const scale = Math.max(side / iw, side / ih);
+            const sw = iw * scale;
+            const sh = ih * scale;
+            const sx = (iw - side / scale) / 2;
+            const sy = (ih - side / scale) / 2;
+            ctx.drawImage(img, sx, sy, side / scale, side / scale, 0, 0, side, side);
+            doDownload(ctx, canvas, link);
+        };
+        img.src = padBackgroundImageUrl;
+    } else {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, side, side);
+        doDownload(ctx, canvas, link);
+    }
 });
 

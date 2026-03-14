@@ -119,6 +119,16 @@ input[type=color]::-webkit-color-swatch-wrapper {
     transform: scale(0.98);
 }
 
+/* Secondary control (e.g. Remove background) – same size, slightly muted */
+#controls button.secondary-control {
+    font-size: clamp(12px, 2.2vw, 14px);
+    opacity: 0.9;
+}
+
+#controls button.secondary-control:hover {
+    opacity: 1;
+}
+
 /* Split Undo/Redo button – same look as other controls */
 .split-btn-wrapper {
     display: flex;
@@ -182,6 +192,9 @@ input[type=color]::-webkit-color-swatch-wrapper {
 
 #pad {
     background-color: white;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
     box-shadow: 1px 1px 5px grey;
     height: var(--pad-size);
     width: var(--pad-size);
@@ -190,6 +203,7 @@ input[type=color]::-webkit-color-swatch-wrapper {
     max-width: 100%;
     display: grid;
     touch-action: none; /* smoother drawing on touch devices */
+    image-rendering: auto; /* smooth scaling so background stays clear, not pixelated */
 }
 
 #download {
