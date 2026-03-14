@@ -190,6 +190,15 @@ input[type=color]::-webkit-color-swatch-wrapper {
     gap: clamp(16px, 3vw, 24px);
 }
 
+.download-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    width: 100%;
+    max-width: var(--pad-size);
+    justify-content: center;
+}
+
 #pad {
     background-color: white;
     background-repeat: no-repeat;
@@ -210,10 +219,11 @@ input[type=color]::-webkit-color-swatch-wrapper {
     background-color: #ededed;
     border: 1px solid #333333;
     height: var(--btn-height);
+    flex: 1 1 0;
     min-width: 0;
-    width: var(--btn-width);
-    padding: 0 clamp(16px, 4vw, 24px);
-    font-size: clamp(14px, 2.5vw, 15px);
+    max-width: calc((var(--pad-size) - 12px) / 2);
+    padding: 0 10px;
+    font-size: clamp(13px, 2vw, 14px);
     font-family: 'Roboto', sans-serif;
     color: #333333;
     border-radius: 7px;
@@ -229,6 +239,34 @@ input[type=color]::-webkit-color-swatch-wrapper {
 }
 
 #download:active {
+    transform: scale(0.98);
+    box-shadow: 2px 2px 1px grey;
+}
+
+#createNftStyle {
+    background-color: #ededed;
+    border: 1px solid #333333;
+    height: var(--btn-height);
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: calc((var(--pad-size) - 12px) / 2);
+    padding: 0 10px;
+    font-size: clamp(12px, 1.8vw, 13px);
+    font-family: 'Roboto', sans-serif;
+    color: #333333;
+    border-radius: 7px;
+    transition: 0.3s;
+    box-shadow: 5px 5px 1px grey;
+    outline: none;
+    cursor: pointer;
+}
+
+#createNftStyle:hover {
+    transform: scale(1.05);
+    box-shadow: 5px 5px 1px grey;
+}
+
+#createNftStyle:active {
     transform: scale(0.98);
     box-shadow: 2px 2px 1px grey;
 }

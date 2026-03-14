@@ -9,9 +9,9 @@ const redoBtn = document.querySelector('#redo');
 const eraser = document.querySelector('#eraser');
 const clear = document.querySelector('#clear');
 const downloadBtn = document.querySelector('#download');
+const createNftStyleBtn = document.querySelector('#createNftStyle');
 const bgImageInput = document.querySelector('#bgImageInput');
 const setBgImageBtn = document.querySelector('#setBgImage');
-const removeBgImageBtn = document.querySelector('#removeBgImage');
 
 // Undo / Redo state
 let undoStack = [];
@@ -128,8 +128,34 @@ clear.addEventListener('click', () => {
     updateUndoRedoButtons();
 })
 
-// Background image: open file picker
-setBgImageBtn.addEventListener('click', () => bgImageInput.click());
+function updateBgImageButton() {
+    if (padBackgroundImageUrl) {
+        setBgImageBtn.textContent = 'Remove background';
+        setBgImageBtn.title = 'Remove background image';
+    } else {
+        setBgImageBtn.textContent = 'Set Background image';
+        setBgImageBtn.title = 'Set a background image on the canvas';
+    }
+}
+
+// Background image: open file picker when no background, else clear background
+setBgImageBtn.addEventListener('click', () => {
+    if (padBackgroundImageUrl) {
+        padBackgroundImageUrl = null;
+        pad.style.backgroundImage = '';
+        pad.style.backgroundSize = '';
+        pad.style.backgroundPosition = '';
+        pad.style.backgroundRepeat = '';
+        pad.style.backgroundColor = 'white';
+        Array.from(pad.children).forEach(cell => {
+            const bg = getComputedStyle(cell).backgroundColor;
+            if (bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') cell.style.backgroundColor = 'white';
+        });
+        updateBgImageButton();
+    } else {
+        bgImageInput.click();
+    }
+});
 
 bgImageInput.addEventListener('change', (e) => {
     const file = e.target.files?.[0];
@@ -142,7 +168,7 @@ bgImageInput.addEventListener('change', (e) => {
         pad.style.backgroundSize = 'cover';
         pad.style.backgroundPosition = 'center';
         pad.style.backgroundRepeat = 'no-repeat';
-        removeBgImageBtn.style.display = '';
+        updateBgImageButton();
         // Make existing white cells transparent so image shows through
         Array.from(pad.children).forEach(cell => {
             const bg = getComputedStyle(cell).backgroundColor;
@@ -151,20 +177,6 @@ bgImageInput.addEventListener('change', (e) => {
     };
     reader.readAsDataURL(file);
     e.target.value = '';
-});
-
-removeBgImageBtn.addEventListener('click', () => {
-    padBackgroundImageUrl = null;
-    pad.style.backgroundImage = '';
-    pad.style.backgroundSize = '';
-    pad.style.backgroundPosition = '';
-    pad.style.backgroundRepeat = '';
-    pad.style.backgroundColor = 'white';
-    removeBgImageBtn.style.display = 'none';
-    Array.from(pad.children).forEach(cell => {
-        const bg = getComputedStyle(cell).backgroundColor;
-        if (bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') cell.style.backgroundColor = 'white';
-    });
 });
 
 // UNDO / REDO
@@ -221,13 +233,12 @@ const randomColor = function () {
     return `rgb(${x},${y},${z})`
 }
 
-// DOWNLOAD SKETCH AS PNG
-function doDownload(ctx, canvas, link) {
-    const gridSize = Number(inputValue.value);
+// Draw current grid cells onto the given 500x500 context (after background is drawn).
+function drawCellsOnContext(ctx) {
     const side = 500;
+    const gridSize = Number(inputValue.value);
     const cellSize = side / gridSize;
     const cells = pad.children;
-
     for (let i = 0; i < cells.length; i++) {
         const cell = cells[i];
         const bg = getComputedStyle(cell).backgroundColor;
@@ -242,7 +253,80 @@ function doDownload(ctx, canvas, link) {
             ctx.fillRect(x, y, w, h);
         }
     }
+}
 
+// Pixelated NFT style: tuned for clarity + marketable punch (resolution, contrast, saturation, sharpen).
+const NFT_PIXEL_GRID = 144;
+
+function applyNftStyle(ctx, canvas) {
+    const outW = canvas.width;
+    const outH = canvas.height;
+    const grid = NFT_PIXEL_GRID;
+
+    // 1) Downscale with SMOOTHING so we capture face detail (averaged pixels), then we'll re-block it
+    const small = document.createElement('canvas');
+    small.width = grid;
+    small.height = grid;
+    const sCtx = small.getContext('2d');
+    sCtx.imageSmoothingEnabled = true;
+    sCtx.imageSmoothingQuality = 'high';
+    sCtx.drawImage(canvas, 0, 0, outW, outH, 0, 0, grid, grid);
+
+    // 2) Richer palette (7 levels) for better skin/feature definition
+    const imgData = sCtx.getImageData(0, 0, grid, grid);
+    const data = imgData.data;
+    const levels = 7;
+    const step = 255 / (levels - 1);
+    for (let i = 0; i < data.length; i += 4) {
+        data[i] = Math.round(data[i] / step) * step;
+        data[i + 1] = Math.round(data[i + 1] / step) * step;
+        data[i + 2] = Math.round(data[i + 2] / step) * step;
+    }
+    // Contrast + slight saturation for a marketable, eye-catching look (not muddy)
+    for (let i = 0; i < data.length; i += 4) {
+        let r = data[i], g = data[i + 1], b = data[i + 2];
+        const mid = (r + g + b) / 3;
+        r = Math.min(255, Math.max(0, mid + (r - mid) * 1.22));
+        g = Math.min(255, Math.max(0, mid + (g - mid) * 1.22));
+        b = Math.min(255, Math.max(0, mid + (b - mid) * 1.22));
+        const sat = 1.08; // subtle saturation bump so it pops in listings
+        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        data[i] = Math.min(255, Math.max(0, gray + (r - gray) * sat));
+        data[i + 1] = Math.min(255, Math.max(0, gray + (g - gray) * sat));
+        data[i + 2] = Math.min(255, Math.max(0, gray + (b - gray) * sat));
+    }
+
+    // 3) Sharpen so eyes, lips, nose, hairline read crisp and market-ready
+    const w = grid;
+    const h = grid;
+    const sharp = new Uint8ClampedArray(data.length);
+    sharp.set(data);
+    const amount = 0.42;
+    for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+            const i = (y * w + x) * 4;
+            for (let c = 0; c < 3; c++) {
+                const center = data[i + c];
+                const left = data[((y) * w + (x - 1)) * 4 + c];
+                const right = data[((y) * w + (x + 1)) * 4 + c];
+                const up = data[((y - 1) * w + x) * 4 + c];
+                const down = data[((y + 1) * w + x) * 4 + c];
+                const lap = 4 * center - left - right - up - down;
+                sharp[i + c] = Math.min(255, Math.max(0, Math.round(center + amount * lap)));
+            }
+        }
+    }
+    for (let i = 0; i < data.length; i++) data[i] = sharp[i];
+    sCtx.putImageData(imgData, 0, 0);
+
+    // 4) Upscale with nearest-neighbor so output is crisp pixel blocks (face stays readable)
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(small, 0, 0, grid, grid, 0, 0, outW, outH);
+}
+
+// DOWNLOAD SKETCH AS PNG
+function doDownload(ctx, canvas, link) {
+    drawCellsOnContext(ctx);
     link.download = `sketchpad-${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
@@ -262,8 +346,6 @@ downloadBtn.addEventListener('click', () => {
             const iw = img.naturalWidth;
             const ih = img.naturalHeight;
             const scale = Math.max(side / iw, side / ih);
-            const sw = iw * scale;
-            const sh = ih * scale;
             const sx = (iw - side / scale) / 2;
             const sy = (ih - side / scale) / 2;
             ctx.drawImage(img, sx, sy, side / scale, side / scale, 0, 0, side, side);
@@ -274,6 +356,42 @@ downloadBtn.addEventListener('click', () => {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, side, side);
         doDownload(ctx, canvas, link);
+    }
+});
+
+// Create NFT-style character from current image (background or drawing) and download
+createNftStyleBtn.addEventListener('click', () => {
+    const side = 500;
+    const canvas = document.createElement('canvas');
+    canvas.width = side;
+    canvas.height = side;
+    const ctx = canvas.getContext('2d');
+    const link = document.createElement('a');
+
+    function finishNftAndDownload() {
+        drawCellsOnContext(ctx);
+        applyNftStyle(ctx, canvas);
+        link.download = `nft-style-character-${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    if (padBackgroundImageUrl) {
+        const img = new Image();
+        img.onload = () => {
+            const iw = img.naturalWidth;
+            const ih = img.naturalHeight;
+            const scale = Math.max(side / iw, side / ih);
+            const sx = (iw - side / scale) / 2;
+            const sy = (ih - side / scale) / 2;
+            ctx.drawImage(img, sx, sy, side / scale, side / scale, 0, 0, side, side);
+            finishNftAndDownload();
+        };
+        img.src = padBackgroundImageUrl;
+    } else {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, side, side);
+        finishNftAndDownload();
     }
 });
 
