@@ -69,7 +69,6 @@ let mouseDown = false
 document.body.onmousedown = () => (mouseDown = true) 
 document.body.onmouseup = () => (mouseDown = false) 
 
-// LET'S BEGIN
 updateSize(); // initializes the sketch pad (16 X 16)
 color.focus(); // activates color mode
 styleActive(); // styles the color button
@@ -255,7 +254,7 @@ function drawCellsOnContext(ctx) {
     }
 }
 
-// Pixelated NFT style: tuned for clarity + marketable punch (resolution, contrast, saturation, sharpen).
+//  NFT style tuned for clarity
 const NFT_PIXEL_GRID = 144;
 
 function applyNftStyle(ctx, canvas) {
@@ -263,7 +262,6 @@ function applyNftStyle(ctx, canvas) {
     const outH = canvas.height;
     const grid = NFT_PIXEL_GRID;
 
-    // 1) Downscale with SMOOTHING so we capture face detail (averaged pixels), then we'll re-block it
     const small = document.createElement('canvas');
     small.width = grid;
     small.height = grid;
@@ -272,7 +270,6 @@ function applyNftStyle(ctx, canvas) {
     sCtx.imageSmoothingQuality = 'high';
     sCtx.drawImage(canvas, 0, 0, outW, outH, 0, 0, grid, grid);
 
-    // 2) Richer palette (7 levels) for better skin/feature definition
     const imgData = sCtx.getImageData(0, 0, grid, grid);
     const data = imgData.data;
     const levels = 7;
@@ -282,7 +279,6 @@ function applyNftStyle(ctx, canvas) {
         data[i + 1] = Math.round(data[i + 1] / step) * step;
         data[i + 2] = Math.round(data[i + 2] / step) * step;
     }
-    // Contrast + slight saturation for a marketable, eye-catching look (not muddy)
     for (let i = 0; i < data.length; i += 4) {
         let r = data[i], g = data[i + 1], b = data[i + 2];
         const mid = (r + g + b) / 3;
@@ -296,7 +292,6 @@ function applyNftStyle(ctx, canvas) {
         data[i + 2] = Math.min(255, Math.max(0, gray + (b - gray) * sat));
     }
 
-    // 3) Sharpen so eyes, lips, nose, hairline read crisp and market-ready
     const w = grid;
     const h = grid;
     const sharp = new Uint8ClampedArray(data.length);
@@ -319,7 +314,6 @@ function applyNftStyle(ctx, canvas) {
     for (let i = 0; i < data.length; i++) data[i] = sharp[i];
     sCtx.putImageData(imgData, 0, 0);
 
-    // 4) Upscale with nearest-neighbor so output is crisp pixel blocks (face stays readable)
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(small, 0, 0, grid, grid, 0, 0, outW, outH);
 }
@@ -359,8 +353,21 @@ downloadBtn.addEventListener('click', () => {
     }
 });
 
+// Show briefly when user tries NFT download without a background image
+const nftToast = document.querySelector('#nftToast');
+function showNftToast() {
+    if (!nftToast) return;
+    nftToast.classList.add('show');
+    clearTimeout(nftToast._hideTimer);
+    nftToast._hideTimer = setTimeout(() => {
+        nftToast.classList.remove('show');
+    }, 4000);
+}
+
 // Create NFT-style character from current image (background or drawing) and download
 createNftStyleBtn.addEventListener('click', () => {
+    if (!padBackgroundImageUrl) showNftToast();
+
     const side = 500;
     const canvas = document.createElement('canvas');
     canvas.width = side;

@@ -271,6 +271,38 @@ input[type=color]::-webkit-color-swatch-wrapper {
     box-shadow: 2px 2px 1px grey;
 }
 
+.nft-hint {
+    margin: 0;
+    font-size: clamp(11px, 1.8vw, 13px);
+    color: #666;
+    text-align: center;
+    max-width: var(--pad-size);
+    line-height: 1.35;
+}
+
+/* Toast for NFT tip when no background image */
+.nft-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    background: #333;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    z-index: 1000;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.nft-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
 /* ========== FOOTER ========== */
 /* Left: Pencil icon by Icons8 | Center: Built by Mahir Anand | Right: Design by michalosman */
 #footer {
